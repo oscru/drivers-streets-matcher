@@ -1,43 +1,22 @@
 import { multiplier } from "./helpers";
-
+import * as types from "./types";
 const nodeReadline = require("readline");
 const fs = require("fs");
 const vocals: string[] = ["a", "e", "i", "o", "u"];
 
 var SSinterface = nodeReadline.createInterface(process.stdin, process.stdout);
-var drivers: string[], streets: string[], data: calculatedSS[];
+var drivers: string[], streets: string[], data: types.calculatedSS[];
 
-interface highestSS {
-  street: string;
-  driver: driver;
-}
-
-interface driver {
-  driver: string;
-  SS: number;
-}
-
-interface calculatedSS {
-  street: string;
-  driverSS: driver[];
-}
-interface calculatedDriverSS {
-  street: string;
-  driver: driver;
-}
-interface sortedDriver {
-  street: string;
-  driver: string;
-  SS: number;
-}
-
-const calculateSS = (street: string, base: number, type: string): driver[] => {
+//Calculate the SS of each driver in each street then return the drivers with the highest SS
+const calculateSS = (street: string, base: number, type: string): types.driver[] => {
   let streetLength: number = street.length;
-  const scores: driver[] = drivers.map((driver: string): driver => {
+  const scores: types.driver[] = drivers.map((driver: string): types.driver => {
+    // Get the SS of each driver
     let driverLetters = driver.replace(" ", "").split("");
-    let multiplierBase = multiplier(streetLength, driverLetters.length);
+    let multiplierBase = multiplier(streetLength, driverLetters.length); // Get the multiplier base
     let SS = 0;
     driverLetters.forEach((letter) => {
+      // Get the puntuation of each letter (consonant or vocal) and add it to the SS
       if (type === "odd") {
         !vocals.includes(letter) && (SS = SS + 1 * base);
       } else {
@@ -52,21 +31,27 @@ const calculateSS = (street: string, base: number, type: string): driver[] => {
   return scores;
 };
 
-const sortDriversSS = (calculatedSS: calculatedSS[]): sortedDriver[] => {
+//Sort all drivers by his highest SS in all streets
+const sortDriversSS = (calculatedSS: types.calculatedSS[]): types.sortedDriver[] => {
   let sortedDrivers = [];
   for (let i = 0; i < calculatedSS.length; i++) {
-    let highestSS: highestSS[] = calculatedSS.map((drivers, index) => {
+    let highestSS: types.highestSS[] = calculatedSS.map((drivers, index) => {
+      // Get the highest SS in each street
       return {
         street: calculatedSS[index].street,
         driver: drivers.driverSS[i],
       };
     });
-    highestSS.sort((a, b) => b.driver.SS - a.driver.SS);
+    highestSS.sort((a, b) => b.driver.SS - a.driver.SS); // Sort the highest SS in each street
     highestSS.forEach((item) => {
+      // Get the driver with the highest SS in each street
       if (sortedDrivers.length > 0) {
         if (sortedDrivers.find((x) => x.street === item.street)) {
+          // If the street already exists in the array
           if (sortedDrivers.find((x) => x.driver.SS < item.driver.SS)) {
+            // If the driver has a higher SS than the last one
             sortedDrivers.splice(
+              // Remove the last one
               sortedDrivers.indexOf(sortedDrivers.find((x) => x === item)),
               1
             );
@@ -74,7 +59,7 @@ const sortDriversSS = (calculatedSS: calculatedSS[]): sortedDriver[] => {
           }
         } else {
           if (
-            sortedDrivers.find((x) => x.driver.driver === item.driver.driver)
+            sortedDrivers.find((x) => x.driver.driver === item.driver.driver) // If the driver already exists in the array
           ) {
             if (sortedDrivers.find((x) => x.driver.SS < item.driver.SS)) {
               sortedDrivers.splice(
@@ -93,7 +78,7 @@ const sortDriversSS = (calculatedSS: calculatedSS[]): sortedDriver[] => {
     });
   }
   return sortedDrivers.map(
-    (sortedDriver: calculatedDriverSS): sortedDriver => ({
+    (sortedDriver: types.calculatedDriverSS): types.sortedDriver => ({
       street: sortedDriver.street,
       driver: sortedDriver.driver.driver,
       SS: sortedDriver.driver.SS,
@@ -103,7 +88,7 @@ const sortDriversSS = (calculatedSS: calculatedSS[]): sortedDriver[] => {
 
 const getDriverSS = (street: string) => {
   street = street.replace(" ", "");
-  let driversScore: driver[], base: number, type: string;
+  let driversScore: types.driver[], base: number, type: string;
   if (street.length % 2 !== 0) {
     driversScore = calculateSS(street, (base = 1), (type = "odd"));
   } else {
@@ -113,7 +98,8 @@ const getDriverSS = (street: string) => {
   return driversScore;
 };
 
-const dataTable = (data: calculatedSS[]) => {
+//Print the data table with the drivers and their SS
+const dataTable = (data: types.calculatedSS[]) => {
   let tableStreets = data.map((item) => {
     const tableData = {};
     tableData["street"] = item.street;
@@ -124,9 +110,9 @@ const dataTable = (data: calculatedSS[]) => {
   });
   console.table(tableStreets);
 };
-
+//Print the data in console, with the highest SS in each street
 const toggleCalculateSS = () => {
-  const calculatedSS: calculatedSS[] = streets.map((street: string) => {
+  const calculatedSS: types.calculatedSS[] = streets.map((street: string) => {
     let driverSS = getDriverSS(street);
     return {
       street,
@@ -148,7 +134,7 @@ const interfaceSSCalculator = () => {
         } catch (err) {
           throw err;
         }
-        drivers = JSON.parse(fetchingDrivers).content;
+        drivers = JSON.parse(fetchingDrivers).content; // Get the drivers
       } else {
         interfaceSSCalculator();
       }
@@ -161,7 +147,7 @@ const interfaceSSCalculator = () => {
             } catch (err) {
               throw err;
             }
-            streets = JSON.parse(fetchingStreets).content;
+            streets = JSON.parse(fetchingStreets).content; // Get the streets
           } else {
             interfaceSSCalculator();
           }
@@ -176,6 +162,7 @@ const interfaceSSCalculator = () => {
                     SSinterface.close();
                     break;
                   case "exit":
+                    SSinterface.close();
                     break;
                   default:
                     SSinterface.close();
@@ -189,4 +176,5 @@ const interfaceSSCalculator = () => {
     }
   );
 };
+
 interfaceSSCalculator();
